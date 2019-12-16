@@ -11,7 +11,7 @@ import android.util.Base64;
 import android.util.Log;
 
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;*/
+import java.security.NoSuchAlgorithmException; */
 
 public class StartActivity extends Activity {
 
@@ -20,7 +20,7 @@ public class StartActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.start);
 
-        // getHashKey();
+         //getHashKey();
 
         try{
             Thread.sleep(2500);

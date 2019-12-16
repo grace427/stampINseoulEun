@@ -4,6 +4,9 @@ import android.app.ProgressDialog;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteConstraintException;
+import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 
 import android.content.Intent;
@@ -39,6 +42,10 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
     private SessionCallback sessionCallback;
 
+    // db
+    private DBHelper dbHelper;
+    private SQLiteDatabase db;
+
     @Override
 
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,14 +79,17 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
         btnGuestLogin.setOnClickListener(this);
 
+        // db helper 객체 생성
+        dbHelper = new DBHelper(this);
+
     }
 
     @Override
     public void onClick(View v) {
 
-        switch (v.getId()){
+        switch (v.getId()) {
 
-            case R.id.btnGuestLogin :
+            case R.id.btnGuestLogin:
 
                 Intent intent = new Intent(LoginActivity.this, ThemeActivity.class);
 
@@ -95,7 +105,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
-        if(Session.getCurrentSession().handleActivityResult(requestCode, resultCode, data)) {
+        if (Session.getCurrentSession().handleActivityResult(requestCode, resultCode, data)) {
             super.onActivityResult(requestCode, resultCode, data);
             return;
         }
@@ -124,35 +134,65 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                 public void onFailure(ErrorResult errorResult) {
                     int result = errorResult.getErrorCode();
 
-                    if(result == ApiErrorCode.CLIENT_ERROR_CODE) {
+                    if (result == ApiErrorCode.CLIENT_ERROR_CODE) {
                         Toast.makeText(getApplicationContext(), "네트워크 연결이 불안정합니다. 다시 시도해 주세요.", Toast.LENGTH_SHORT).show();
                         finish();
                     } else {
-                        Toast.makeText(getApplicationContext(),"로그인 도중 오류가 발생했습니다: "+errorResult.getErrorMessage(),Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getApplicationContext(), "로그인 도중 오류가 발생했습니다: " + errorResult.getErrorMessage(), Toast.LENGTH_SHORT).show();
                     }
                 }
 
                 // 로그인 도중 세션이 비정상적인 이유로 닫혔을 때.
                 @Override
                 public void onSessionClosed(ErrorResult errorResult) {
-                    Toast.makeText(getApplicationContext(),"세션이 닫혔습니다. 다시 시도해 주세요: "+errorResult.getErrorMessage(),Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "세션이 닫혔습니다. 다시 시도해 주세요: " + errorResult.getErrorMessage(), Toast.LENGTH_SHORT).show();
                 }
 
                 // 로그인에 성공했을 때. MeV2Response 객체 넘어오는데, 로그인한 유저의 정보를 담고 있는 중요객체.
                 @Override
                 public void onSuccess(MeV2Response result) {
+                    try {
+                        db = dbHelper.getWritableDatabase();
+
+                        String insertUserInfo = "INSERT or REPLACE INTO userTBL values('"
+                                + result.getId() + "' , '"
+                                + result.getNickname() + "' , '"
+                                + result.getProfileImagePath() + "');";
+                        //+ " SELECT * FROM userTBL WHERE NOT EXISTS (SELECT userId FROM userTBL WHERE userID='" + result.getId() + "') LIMIT 1;";
+                        db.execSQL(insertUserInfo);
+
+                        // 새로 로그인한 유저의 전용 테이블 2개 생성
+                        String createZzimTBL = "CREATE TABLE IF NOT EXISTS ZZIM_" + result.getId() + "("
+                                + "title TEXT PRIMARY KEY, "
+                                + "mapX REAL, "
+                                + "mapY REAL); ";
+                        db.execSQL(createZzimTBL);
+
+                        String createStampTBL = "CREATE TABLE IF NOT EXISTS STAMP_" + result.getId() + "("
+                                + "_id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                                + "title TEXT, "
+                                + "addr TEXT, "
+                                + "mapX REAL, "
+                                + "mapY REAL, "
+                                + "picture TEXT, "
+                                + "content_pola TEXT, "
+                                + "content_title TEXT, "
+                                + "contents TEXT, "
+                                + "complete INTEGER);";
+                        db.execSQL(createStampTBL);
+
+                    } catch (SQLiteConstraintException e) {
+
+                    }
 
                     Intent intent = new Intent(getApplicationContext(), ThemeActivity.class);
 
                     intent.putExtra("name", result.getNickname()); // 유저 닉네임
                     intent.putExtra("profile", result.getProfileImagePath()); // 카카오톡 프로필 이미지
                     intent.putExtra("id", result.getId());
-
-
-                    Log.d("dd", String.valueOf(result.getId()));
-
                     startActivity(intent);
 
+                    db.close();
                     finish();
 
                 }
@@ -163,8 +203,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
         @Override
         public void onSessionOpenFailed(KakaoException e) {
 
-            Toast.makeText(getApplicationContext(), "로그인 도중 오류가 발생했습니다. 인터넷 연결을 확인해주세요: "+e.toString(), Toast.LENGTH_SHORT).show();
-
+            Toast.makeText(getApplicationContext(), "로그인 도중 오류가 발생했습니다. 인터넷 연결을 확인해주세요: " + e.toString(), Toast.LENGTH_SHORT).show();
         }
     }
 
