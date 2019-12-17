@@ -52,9 +52,9 @@ public class ThemeActivity extends AppCompatActivity implements TabLayout.BaseOn
 
     private long backButtonTime = 0;
 
-    private ArrayList<String> list = new ArrayList<>();
+    private ArrayList<ThemeData> list = new ArrayList<>();
     // 찜 목록에서 선택한 것만 담는 리스트
-    private ArrayList<String> checkedList = new ArrayList<>();
+    private ArrayList<ThemeData> checkedList = new ArrayList<>();
 
     private RecyclerView recyclerView;
     private LinearLayoutManager linearLayoutManager;
@@ -222,12 +222,16 @@ public class ThemeActivity extends AppCompatActivity implements TabLayout.BaseOn
                 Cursor cursor;
 
                 cursor = db.rawQuery("SELECT title FROM ZZIM_" + strId + ";", null);
-                while (cursor.moveToNext()) {
-                    list.add(cursor.getString(0));
+                if(cursor != null){
+                    while (cursor.moveToNext()) {
+                        Log.d("TAG","찜 목록에 뿌려주기 "+cursor.getString(0) );
+                        list.add(new ThemeData(cursor.getString(0), cursor.getString(1), cursor.getDouble(2), cursor.getDouble(3)));
+                    }
                 }
 
 
-                final ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.item_check_box_color, list);
+
+                final ArrayAdapter<ThemeData> adapter = new ArrayAdapter<>(this, R.layout.item_check_box_color, list);
 
                 listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
 
@@ -248,14 +252,13 @@ public class ThemeActivity extends AppCompatActivity implements TabLayout.BaseOn
                         Cursor cursor;
                         cursor = MainActivity.db.rawQuery("SELECT title FROM STAMP_" + userId + ";", null);
 
-
                         SparseBooleanArray booleans = listView.getCheckedItemPositions();
 
                         // 스탬프 리스트에 이미 있는 항목을 선택한 경우 checkedlist에 들어가지 못함
                         if (booleans.get(position)) {
                             while (cursor.moveToNext()) {
-                                if (cursor.getString(0).equals(list.get(position))) {
-                                    Toast.makeText(getApplicationContext(), list.get(position) + " 이미 스탬프 리스트에 들어 있습니다.", Toast.LENGTH_LONG).show();
+                                if (cursor.getString(0).equals(list.get(position).getTitle())) {
+                                    Toast.makeText(getApplicationContext(), list.get(position).getTitle() + " 이미 스탬프 리스트에 들어 있습니다.", Toast.LENGTH_LONG).show();
                                 } else {
                                     checkedList.add(list.get(position));
                                 }
@@ -273,8 +276,8 @@ public class ThemeActivity extends AppCompatActivity implements TabLayout.BaseOn
                     public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
                         list.remove(list);
 
-                        Log.d("TAG", "롱클릭 들어옴 " + list.get(position));
-                        String zzimDelete = "DELETE FROM ZZIM_" + userId + " WHERE title='" + list.get(position) + "';";
+                        Log.d("TAG", "롱클릭 들어옴 " + list.get(position).getTitle());
+                        String zzimDelete = "DELETE FROM ZZIM_" + userId + " WHERE title='" + list.get(position).getTitle() + "';";
                         db.execSQL(zzimDelete);
                         adapter.notifyDataSetChanged();
                         return true;
@@ -290,9 +293,6 @@ public class ThemeActivity extends AppCompatActivity implements TabLayout.BaseOn
                 btnSave.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        MainActivity.db = MainActivity.dbHelper.getWritableDatabase();
-                        Cursor cursor;
-                        cursor = MainActivity.db.rawQuery("SELECT COUNT(*) FROM STAMP_" + userId + ";", null);
 
 
                         // 여기서 8개 이상이면 못 받아줌
@@ -300,21 +300,28 @@ public class ThemeActivity extends AppCompatActivity implements TabLayout.BaseOn
                         if (checkedList.size() > 8) {
                             Toast.makeText(getApplicationContext(), "스탬프 리스트에 8개 이상 담을 수 없습니닷!!!", Toast.LENGTH_LONG).show();
                         } else {
-//                            String stampInsert = "INSERT INTO STAMP_" + userId + " VALUES('" + list.get(position).getTitle() + "', '"
-//                                    + list.get(position).getMapX() + "', '"
-//                                    + list.get(position).getMapY() + "');";
-//
-//                            db.execSQL(zzimInsert);
-//                            while (cursor.moveToNext()) {
-//                                cursor.getCount() > 8
-//                                if (cursor.getString(0).equals(list.get(position))) {
-//                                    Toast.makeText(getApplicationContext(), list.get(position) + " 이미 스탬프 리스트에 들어 있습니다.", Toast.LENGTH_LONG).show();
-//                                } else {
-//                                    checkedList.add(list.get(position));
-//                                }
-//
-//                            }
+                            for (ThemeData themeData : checkedList) {
+                                String stampInsert = "INSERT INTO STAMP_" + userId + " VALUES('" + themeData.getTitle() + "', '"
+                                        + themeData.getAddr() + "', '"
+                                        + themeData.getMapX() + "', '"
+                                        + themeData.getMapY() + "');";
 
+                                db.execSQL(stampInsert);
+                            }
+
+                            MainActivity.db = MainActivity.dbHelper.getWritableDatabase();
+                            Cursor cursor;
+                            cursor = MainActivity.db.rawQuery("SELECT COUNT(*) FROM STAMP_" + userId + ";", null);
+
+                            if (cursor.getCount() > 8) {
+                                Toast.makeText(getApplicationContext(), "현재 스탬프 리스트에는 "+cursor.getCount()+"개 들어있습니다. 8개만 넣어주세요!", Toast.LENGTH_LONG).show();
+                                for(ThemeData themeData : checkedList) {
+                                    String zzimDelete = "DELETE FROM STAMP_" + userId + " WHERE title='" + themeData.getTitle() + "';";
+                                    db.execSQL(zzimDelete);
+                                }
+                            } else {
+                                Toast.makeText(getApplicationContext(), "스탬프 리스트에 잘 담았습니다.", Toast.LENGTH_LONG).show();
+                            }
 
                         }
                     }

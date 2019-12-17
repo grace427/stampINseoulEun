@@ -49,7 +49,7 @@ public class ThemeAdapter extends RecyclerView.Adapter<ThemeAdapter.MyViewHolder
     final static String TAG = "ThemeActivity";
 
     Context context;
-    ArrayList<ThemeData> list;
+    ArrayList<ThemeData> list ;
 
     int layout;
 
@@ -133,12 +133,13 @@ public class ThemeAdapter extends RecyclerView.Adapter<ThemeAdapter.MyViewHolder
                        list.get(position).setHart(true);
 
                        String zzimInsert = "INSERT INTO ZZIM_" + userId + " VALUES('" + list.get(position).getTitle() + "', '"
+                               + list.get(position).getAddr() + "', '"
                                + list.get(position).getMapX() + "', '"
                                + list.get(position).getMapY() + "');";
 
                        db.execSQL(zzimInsert);
 
-                       Log.d("TAG", "하트를 선택하면 ZZIM 테이블 디비에 들어간다 : " + list.get(position).getTitle());
+                       Log.d("TAG", "하트를 선택하면 ZZIM 테이블 디비에 들어간다 : " + list.get(position).getAddr());
                        holder.Like_heart.likeAnimation(new AnimatorListenerAdapter() {
                            @Override
                            public void onAnimationEnd(Animator animation) {

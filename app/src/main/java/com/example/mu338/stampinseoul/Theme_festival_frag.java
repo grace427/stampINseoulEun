@@ -171,6 +171,7 @@ public class Theme_festival_frag extends Fragment {
                                 themeData.setTitle(imsi.getString("title"));
                                 themeData.setMapX(imsi.getDouble("mapx"));
                                 themeData.setMapY(imsi.getDouble("mapy"));
+                                themeData.setAddr(imsi.getString("addr1"));
                                 themeData.setContentsID(Integer.valueOf(imsi.getString("contentid")));
 
                                 while(cursor.moveToNext()){
@@ -180,6 +181,7 @@ public class Theme_festival_frag extends Fragment {
                                 }
                                 cursor.moveToFirst();
                                 list.add(themeData);
+
 
                             }
 

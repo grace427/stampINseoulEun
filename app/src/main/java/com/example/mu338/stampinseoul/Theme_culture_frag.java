@@ -217,6 +217,7 @@ public class Theme_culture_frag extends Fragment {
                                 ThemeData themeData = new ThemeData();
                                 themeData.setFirstImage(imsi.getString("firstimage"));
                                 themeData.setTitle(imsi.getString("title"));
+                                themeData.setAddr(imsi.getString("addr1"));
                                 themeData.setMapX(imsi.getDouble("mapx"));
                                 themeData.setMapY(imsi.getDouble("mapy"));
                                 themeData.setContentsID(Integer.valueOf(imsi.getString("contentid")));

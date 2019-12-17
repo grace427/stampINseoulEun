@@ -13,6 +13,17 @@ public class ThemeData implements Serializable {
     private double mapY;
     private boolean hart=false;
 
+    public ThemeData(){
+
+    }
+
+    public ThemeData(String title, String addr, double mapX, double mapY) {
+        this.title = title;
+        this.addr = addr;
+        this.mapX = mapX;
+        this.mapY = mapY;
+    }
+
     public boolean isHart() {
         return hart;
     }
