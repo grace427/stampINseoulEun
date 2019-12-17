@@ -8,8 +8,10 @@ import android.support.v4.app.FragmentStatePagerAdapter;
 
 public class ThemeViewPagerAdapter extends FragmentStatePagerAdapter {
 
+
     public ThemeViewPagerAdapter(FragmentManager fm) {
         super(fm);
+
     }
 
     //프래그먼트 교체를 보여주는 역할

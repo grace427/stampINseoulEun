@@ -1,5 +1,6 @@
 package com.example.mu338.stampinseoul;
 
+import android.app.Application;
 import android.app.ProgressDialog;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -45,6 +46,8 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
     // db
     private DBHelper dbHelper;
     private SQLiteDatabase db;
+
+    public static Long userId=null;
 
     @Override
 
@@ -152,6 +155,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                 @Override
                 public void onSuccess(MeV2Response result) {
                     try {
+                        userId = result.getId();
                         db = dbHelper.getWritableDatabase();
 
                         String insertUserInfo = "INSERT or REPLACE INTO userTBL values('"
@@ -185,6 +189,8 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
 
                     }
 
+                    Log.d("TAG", userId.toString());
+
                     Intent intent = new Intent(getApplicationContext(), ThemeActivity.class);
 
                     intent.putExtra("name", result.getNickname()); // 유저 닉네임
@@ -192,7 +198,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                     intent.putExtra("id", result.getId());
                     startActivity(intent);
 
-                    db.close();
+
                     finish();
 
                 }

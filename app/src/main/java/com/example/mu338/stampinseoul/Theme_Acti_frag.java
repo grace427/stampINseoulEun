@@ -2,6 +2,8 @@ package com.example.mu338.stampinseoul;
 
 
 import android.app.ProgressDialog;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -31,6 +33,8 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
+import static com.example.mu338.stampinseoul.LoginActivity.userId;
+
 // 쇼핑 테마
 public class Theme_Acti_frag extends Fragment {
 
@@ -48,6 +52,10 @@ public class Theme_Acti_frag extends Fragment {
     ArrayList<ThemeData> list = new ArrayList<>();
 
     LottieAnimationView animationView1 = null;
+
+    public static DBHelper dbHelper;
+    public static SQLiteDatabase db;
+
 
     final static String TAG = "ThemeActivity";
     static final String KEY = "GN2mE8m8pbEpOyKZDhiRdDOZjg%2FR%2FUEIgo7z26k3HEefz8M0DvSZZwn0ekpLJmg%2F42jihzBbKf57CP79m12CrA%3D%3D";
@@ -81,6 +89,9 @@ public class Theme_Acti_frag extends Fragment {
         animationView1.loop(true);
         animationView1.playAnimation();
         animationView1.setVisibility(View.INVISIBLE);
+
+        // db helper 객체 생성
+        dbHelper = new DBHelper(view.getContext());
 
         return view;
     }
@@ -145,6 +156,11 @@ public class Theme_Acti_frag extends Fragment {
                     @Override
                     public void onResponse(JSONObject response) {
                         pDialog.dismiss();
+
+                        db = dbHelper.getWritableDatabase();
+                        Cursor cursor;
+
+                        cursor = db.rawQuery("SELECT title FROM ZZIM_"+userId+";", null);
                         try {
                             JSONObject parse_response = (JSONObject) response.get("response");
                             JSONObject parse_body = (JSONObject) parse_response.get("body");
@@ -159,11 +175,19 @@ public class Theme_Acti_frag extends Fragment {
                                 ThemeData themeData = new ThemeData();
                                 themeData.setFirstImage(imsi.getString("firstimage"));
                                 themeData.setTitle(imsi.getString("title"));
+                                themeData.setMapX(imsi.getDouble("mapx"));
+                                themeData.setMapY(imsi.getDouble("mapy"));
                                 themeData.setContentsID(Integer.valueOf(imsi.getString("contentid")));
 
+
+                                while(cursor.moveToNext()){
+                                    if(cursor.getString(0).equals(themeData.getTitle())){
+                                        themeData.setHart(true);
+                                    }
+                                }
+                                cursor.moveToFirst();
                                 list.add(themeData);
 
-                                //contentIdList.add(Integer.valueOf(imsi.getString("contentid")));
                             }
 
                             recyclerView.setAdapter(adapter);

@@ -2,6 +2,8 @@ package com.example.mu338.stampinseoul;
 
 
 import android.app.ProgressDialog;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -30,6 +32,8 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
+import static com.example.mu338.stampinseoul.LoginActivity.userId;
+
 // 맛집 코드 : 39
 public class Theme_food_frag extends Fragment {
 
@@ -48,6 +52,10 @@ public class Theme_food_frag extends Fragment {
     ArrayList<ThemeData> list = new ArrayList<>();
 
     LottieAnimationView animationView3 = null;
+
+    public static DBHelper dbHelper;
+    public static SQLiteDatabase db;
+
 
 
     final static String TAG = "ThemeActivity";
@@ -82,6 +90,9 @@ public class Theme_food_frag extends Fragment {
         animationView3.loop(true);
         animationView3.playAnimation();
         animationView3.setVisibility(View.INVISIBLE);
+
+        // db helper 객체 생성
+        dbHelper = new DBHelper(view.getContext());
 
         return view;
     }
@@ -147,6 +158,11 @@ public class Theme_food_frag extends Fragment {
                     @Override
                     public void onResponse(JSONObject response) {
                         pDialog.dismiss();
+
+                        db = dbHelper.getWritableDatabase();
+                        Cursor cursor;
+
+                        cursor = db.rawQuery("SELECT title FROM ZZIM_"+userId+";", null);
                         try {
                             JSONObject parse_response = (JSONObject) response.get("response");
                             JSONObject parse_body = (JSONObject) parse_response.get("body");
@@ -159,11 +175,22 @@ public class Theme_food_frag extends Fragment {
                                 ThemeData themeData = new ThemeData();
                                 themeData.setFirstImage(imsi.getString("firstimage"));
                                 themeData.setTitle(imsi.getString("title"));
+                                themeData.setMapX(imsi.getDouble("mapx"));
+                                themeData.setMapY(imsi.getDouble("mapy"));
                                 themeData.setContentsID(Integer.valueOf(imsi.getString("contentid")));
 
+
+                                while(cursor.moveToNext()){
+                                        if(cursor.getString(0).equals(themeData.getTitle())){
+                                            themeData.setHart(true);
+                                        }
+                                    Log.d("TAG", i+"  테마데이터 : "+themeData.getTitle());
+                                    Log.d("TAG", i+"  커서 : "+cursor.getString(cursor.getColumnIndex("title")));
+
+                                }
+                                cursor.moveToFirst();
                                 list.add(themeData);
 
-                                // contentIdList.add(Integer.valueOf(imsi.getString("contentid")));
                             }
 
                             recyclerView.setAdapter(adapter);

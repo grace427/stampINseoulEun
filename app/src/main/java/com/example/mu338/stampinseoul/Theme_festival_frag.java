@@ -2,6 +2,8 @@ package com.example.mu338.stampinseoul;
 
 
 import android.app.ProgressDialog;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -30,6 +32,8 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 
+import static com.example.mu338.stampinseoul.LoginActivity.userId;
+
 
 public class Theme_festival_frag extends Fragment {
 
@@ -51,6 +55,7 @@ public class Theme_festival_frag extends Fragment {
     final static String TAG = "ThemeActivity";
     static final String KEY = "GN2mE8m8pbEpOyKZDhiRdDOZjg%2FR%2FUEIgo7z26k3HEefz8M0DvSZZwn0ekpLJmg%2F42jihzBbKf57CP79m12CrA%3D%3D";
     static final String appName = "Zella";
+
 
     public Theme_festival_frag() {
         // Required empty public constructor
@@ -85,6 +90,10 @@ public class Theme_festival_frag extends Fragment {
         animationView4.loop(true);
         animationView4.playAnimation();
         animationView4.setVisibility(View.INVISIBLE);
+
+        // db helper 객체 생성
+        MainActivity.dbHelper = new DBHelper(view.getContext());
+
 
         return view;
     }
@@ -140,6 +149,11 @@ public class Theme_festival_frag extends Fragment {
                     @Override
                     public void onResponse(JSONObject response) {
                         pDialog.dismiss();
+
+                        MainActivity.db = MainActivity.dbHelper.getWritableDatabase();
+                        Cursor cursor;
+
+                        cursor = MainActivity.db.rawQuery("SELECT title FROM ZZIM_"+userId+";", null);
                         try {
                             JSONObject parse_response = (JSONObject) response.get("response");
                             JSONObject parse_body = (JSONObject) parse_response.get("body");
@@ -155,8 +169,16 @@ public class Theme_festival_frag extends Fragment {
                                 ThemeData themeData = new ThemeData();
                                 themeData.setFirstImage(imsi.getString("firstimage"));
                                 themeData.setTitle(imsi.getString("title"));
+                                themeData.setMapX(imsi.getDouble("mapx"));
+                                themeData.setMapY(imsi.getDouble("mapy"));
                                 themeData.setContentsID(Integer.valueOf(imsi.getString("contentid")));
 
+                                while(cursor.moveToNext()){
+                                    if(cursor.getString(0).equals(themeData.getTitle())){
+                                        themeData.setHart(true);
+                                    }
+                                }
+                                cursor.moveToFirst();
                                 list.add(themeData);
 
                             }

@@ -5,11 +5,14 @@ import android.animation.AnimatorListenerAdapter;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
+import android.database.SQLException;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -38,16 +41,17 @@ import java.util.ArrayList;
 
 import xyz.hanks.library.bang.SmallBangView;
 
+import static com.example.mu338.stampinseoul.LoginActivity.userId;
+
 public class ThemeAdapter extends RecyclerView.Adapter<ThemeAdapter.MyViewHolder> {
 
-    int i=0;
+    int i = 0;
     final static String TAG = "ThemeActivity";
 
     Context context;
     ArrayList<ThemeData> list;
 
     int layout;
-    // Hashtable<Integer, ThemeData> item;
 
     View view;
     View viewDialog;
@@ -60,6 +64,10 @@ public class ThemeAdapter extends RecyclerView.Adapter<ThemeAdapter.MyViewHolder
     RequestQueue queue;
 
     Bitmap bitmap;
+
+    public static DBHelper dbHelper;
+    public static SQLiteDatabase db;
+
 
     public ThemeAdapter(int layout, Context context, ArrayList<ThemeData> list) {
         super();
@@ -75,6 +83,9 @@ public class ThemeAdapter extends RecyclerView.Adapter<ThemeAdapter.MyViewHolder
 
         MyViewHolder viewHolder = new MyViewHolder(view);
 
+        // db helper 객체 생성
+        dbHelper = new DBHelper(view.getContext());
+
         return viewHolder;
 
     }
@@ -87,121 +98,75 @@ public class ThemeAdapter extends RecyclerView.Adapter<ThemeAdapter.MyViewHolder
         Glide.with(context).load(list.get(position).getFirstImage()).into(holder.imgView);
 
 
-       /* Thread thread = new Thread(){
-
-            @Override
-            public void run(){
-
-                try{
-
-                    URL url = new URL(list.get(position).getFirstImage());
-
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-
-                    conn.setDoInput(true);
-
-                    conn.connect();
-
-                    InputStream is = conn.getInputStream();
-
-                    bitmap = BitmapFactory.decodeStream(is);
-
-
-                }catch (Exception e){
-                    e.printStackTrace();
-                }
-
-            }
-
-        };
-
-        thread.start();
-
-        try {
-
-            thread.join();
-
-            holder.imgView.setImageBitmap(bitmap);
-
-        }catch (InterruptedException e){
-
-        }*/
-
-
-        // loadImageInBackground(list.get(position).getFirstImage(), context);
-        // Log.d(TAG, list.get(position).getTitle()+"   "+list.get(position).getFirstImage()+"   "+(i++));
         holder.itemView.setTag(position);
 
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                    int position = (int) v.getTag();
+                int position = (int) v.getTag();
 
-                    ThemeAdapter.AsyncTaskClassSub asyncSub = new ThemeAdapter.AsyncTaskClassSub();
-                    asyncSub.execute(position);
+                ThemeAdapter.AsyncTaskClassSub asyncSub = new ThemeAdapter.AsyncTaskClassSub();
+                asyncSub.execute(position);
 
             }
         });
 
-        /*holder.imagebtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                if(list.get(position).isHart()){
-
-                    holder.imagebtn.setImageResource(R.drawable.ic_favorite_border_black_24dp);
-
-                    list.get(position).setHart(false);
-
-                }else{
-
-                    holder.imagebtn.setImageResource(R.drawable.ic_favorite_black_24dp);
-
-                    list.get(position).setHart(true);
-
-                }
-
-            }
-        });*/
-
+        holder.Like_heart.setSelected(false);
         holder.Like_heart.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
+                db = dbHelper.getWritableDatabase();
 
-                if (holder.Like_heart.isSelected()) {
+               try {
+                   if (list.get(position).isHart()) {
+                       // 하트 선택 해제
+                       holder.Like_heart.setSelected(false);
+                       list.get(position).setHart(false);
 
-                    holder.Like_heart.setSelected(false);
+                       String zzimDelete = "DELETE FROM ZZIM_"+userId+" WHERE title='"+list.get(position).getTitle()+"';";
+                       db.execSQL(zzimDelete);
+                   } else {
+                       // 하트 선택
+                       holder.Like_heart.setSelected(true);
+                       list.get(position).setHart(true);
 
-                } else {
+                       String zzimInsert = "INSERT INTO ZZIM_" + userId + " VALUES('" + list.get(position).getTitle() + "', '"
+                               + list.get(position).getMapX() + "', '"
+                               + list.get(position).getMapY() + "');";
 
-                    holder.Like_heart.setSelected(true);
+                       db.execSQL(zzimInsert);
 
-                    holder.Like_heart.likeAnimation(new AnimatorListenerAdapter() {
+                       Log.d("TAG", "하트를 선택하면 ZZIM 테이블 디비에 들어간다 : " + list.get(position).getTitle());
+                       holder.Like_heart.likeAnimation(new AnimatorListenerAdapter() {
+                           @Override
+                           public void onAnimationEnd(Animator animation) {
+                               super.onAnimationEnd(animation);
+                           }
+                       });
+                   }
+                   }catch(SQLException e){
+                            Log.d(TAG, e.getMessage());
+                   }
 
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            super.onAnimationEnd(animation);
-                        }
 
-                    });
-                }
-
-            }
+            } // onClick
         });
-
+        if (list.get(position).isHart()) {
+            holder.Like_heart.setSelected(true);
+        }
     }
 
     @Override
     public int getItemCount() {
-         return list == null ? 0: list.size();
+        return list == null ? 0 : list.size();
     }
 
 
     public class MyViewHolder extends RecyclerView.ViewHolder {
 
-      //  public ImageView imgView;
+        //  public ImageView imgView;
         public TextView txtView;
         public ImageView imgView;
         public ImageView imagebtn;
@@ -222,38 +187,11 @@ public class ThemeAdapter extends RecyclerView.Adapter<ThemeAdapter.MyViewHolder
         }
     }
 
-    public ThemeData TourData(int position){
+    public ThemeData TourData(int position) {
 
         return list != null ? list.get(position) : null;
     }
 
-    /*public void loadImageInBackground(String str, Context context) {
-
-
-        Target target = new Target() {
-
-            @Override
-            public void onPrepareLoad(Drawable arg0) {
-
-
-        }
-
-            @Override
-            public void onBitmapLoaded(Bitmap arg0, Picasso.LoadedFrom arg1) {
-
-                imgView.setImageBitmap(arg0);
-            }
-
-            @Override
-            public void onBitmapFailed(Drawable arg0) {
-                // TODO Auto-generated method stub
-            }
-        };
-
-        Picasso.with(context)
-                .load(str)
-                .into(target);
-    }*/
 
     class AsyncTaskClassSub extends android.os.AsyncTask<Integer, ThemeData, ThemeData> {
 
@@ -384,6 +322,9 @@ public class ThemeAdapter extends RecyclerView.Adapter<ThemeAdapter.MyViewHolder
         return detailThemeData;
     }
 
+
 }
+
+
 
 

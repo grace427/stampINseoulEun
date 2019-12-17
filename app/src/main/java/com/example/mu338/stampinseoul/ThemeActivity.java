@@ -1,9 +1,12 @@
 package com.example.mu338.stampinseoul;
 
 import android.app.AlertDialog;
+import android.app.Application;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.support.constraint.ConstraintLayout;
@@ -17,20 +20,26 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.util.SparseBooleanArray;
 import android.view.View;
 import android.view.Window;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 
 import java.util.ArrayList;
+
+import static com.example.mu338.stampinseoul.LoginActivity.userId;
 
 
 public class ThemeActivity extends AppCompatActivity implements TabLayout.BaseOnTabSelectedListener, ViewPager.OnPageChangeListener, View.OnClickListener {
@@ -43,7 +52,10 @@ public class ThemeActivity extends AppCompatActivity implements TabLayout.BaseOn
 
     private long backButtonTime = 0;
 
-    private ArrayList<ThemeFavoritesData> list = new ArrayList<>();
+    private ArrayList<String> list = new ArrayList<>();
+    // 찜 목록에서 선택한 것만 담는 리스트
+    private ArrayList<String> checkedList = new ArrayList<>();
+
     private RecyclerView recyclerView;
     private LinearLayoutManager linearLayoutManager;
     private Theme_favorites_adapter theme_favorites_adapter;
@@ -55,9 +67,13 @@ public class ThemeActivity extends AppCompatActivity implements TabLayout.BaseOn
     private EditText edtSearch;
     private ImageButton btnSearch;
 
-    String strNickname, strProfile;
-    Long strId;
-    Long ID;
+    public static String strNickname, strProfile;
+    public static Long strId;
+    private ListView listView;
+
+    public static DBHelper dbHelper;
+    public static SQLiteDatabase db;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,8 +81,8 @@ public class ThemeActivity extends AppCompatActivity implements TabLayout.BaseOn
         setContentView(R.layout.activity_theme);
 
         //뷰페이저 설정
-        viewPager=findViewById(R.id.viewPager);
-        tabLayout=findViewById(R.id.tabLayout);
+        viewPager = findViewById(R.id.viewPager);
+        tabLayout = findViewById(R.id.tabLayout);
 
         fragmentStatePagerAdapter = new ThemeViewPagerAdapter(getSupportFragmentManager());
 
@@ -108,11 +124,12 @@ public class ThemeActivity extends AppCompatActivity implements TabLayout.BaseOn
 
         strNickname = intent.getStringExtra("name");
         strProfile = intent.getStringExtra("profile");
-        Long strId = intent.getLongExtra("id", 0L);
+        strId = intent.getLongExtra("id", 0);
 
-        Log.d("dd", strId.toString());
+        Toast.makeText(getApplicationContext(), strId + " 님, 환영합니다!", Toast.LENGTH_SHORT).show();
 
-        Toast.makeText(getApplicationContext(), strId+" 님, 환영합니다!", Toast.LENGTH_SHORT).show();
+        // db helper 객체 생성
+        dbHelper = new DBHelper(this);
     }
 
     @Override
@@ -152,7 +169,7 @@ public class ThemeActivity extends AppCompatActivity implements TabLayout.BaseOn
 
     @Override
     public void onPageScrollStateChanged(int i) {
-        if( i == ViewPager.SCROLL_STATE_DRAGGING)
+        if (i == ViewPager.SCROLL_STATE_DRAGGING)
             isDragged = true;
     }
 
@@ -162,9 +179,9 @@ public class ThemeActivity extends AppCompatActivity implements TabLayout.BaseOn
         long currentTime = System.currentTimeMillis();
         long gapTime = currentTime - backButtonTime;
 
-        if( gapTime >= 0 && gapTime <= 2000){
+        if (gapTime >= 0 && gapTime <= 2000) {
             super.onBackPressed();
-        }else {
+        } else {
             backButtonTime = currentTime;
             Toast.makeText(this, "한번 더 누르면 종료됩니다.", Toast.LENGTH_SHORT).show();
         }
@@ -173,15 +190,15 @@ public class ThemeActivity extends AppCompatActivity implements TabLayout.BaseOn
     @Override
     public void onClick(View v) {
 
-        switch (v.getId()){
+        switch (v.getId()) {
 
-            case R.id.fab :
+            case R.id.fab:
 
                 anim();
 
                 break;
 
-            case R.id.fab1 :
+            case R.id.fab1:
 
                 anim();
 
@@ -191,36 +208,115 @@ public class ThemeActivity extends AppCompatActivity implements TabLayout.BaseOn
 
                 break;
 
-            case R.id.fab2 :
-
+            case R.id.fab2:
+                list.removeAll(list);
+                checkedList.removeAll(checkedList);
                 anim();
 
                 final View viewDialog = v.inflate(v.getContext(), R.layout.dialog_favorites, null);
 
-                recyclerView = viewDialog.findViewById(R.id.recyclerView);
+                listView = viewDialog.findViewById(R.id.listView);
 
-                linearLayoutManager = new LinearLayoutManager(viewDialog.getContext());
+                // 여기서 DB ZZIM 테이블에 들어있는거 리스트에 넣어서 뿌려주기
+                db = dbHelper.getWritableDatabase();
+                Cursor cursor;
 
-                recyclerView.setLayoutManager(linearLayoutManager);
+                cursor = db.rawQuery("SELECT title FROM ZZIM_" + strId + ";", null);
+                while (cursor.moveToNext()) {
+                    list.add(cursor.getString(0));
+                }
 
-                theme_favorites_adapter = new Theme_favorites_adapter(R.layout.dialog_favorites_item, list);
 
-                recyclerView.setAdapter(theme_favorites_adapter);
+                final ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.item_check_box_color, list);
+
+                listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+
+                listView.setAdapter(adapter);
+                adapter.notifyDataSetChanged();
 
                 Button btnSave = viewDialog.findViewById(R.id.btnSave);
                 Button btnExit = viewDialog.findViewById(R.id.btnExit);
 
+
                 final Dialog dialog = new Dialog(viewDialog.getContext());
+
+                // Check
+                listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                        MainActivity.db = MainActivity.dbHelper.getWritableDatabase();
+                        Cursor cursor;
+                        cursor = MainActivity.db.rawQuery("SELECT title FROM STAMP_" + userId + ";", null);
+
+
+                        SparseBooleanArray booleans = listView.getCheckedItemPositions();
+
+                        // 스탬프 리스트에 이미 있는 항목을 선택한 경우 checkedlist에 들어가지 못함
+                        if (booleans.get(position)) {
+                            while (cursor.moveToNext()) {
+                                if (cursor.getString(0).equals(list.get(position))) {
+                                    Toast.makeText(getApplicationContext(), list.get(position) + " 이미 스탬프 리스트에 들어 있습니다.", Toast.LENGTH_LONG).show();
+                                } else {
+                                    checkedList.add(list.get(position));
+                                }
+                            }
+                            cursor.moveToFirst();
+                        } else {
+                            checkedList.remove(list.get(position));
+                        }
+                    }
+                });
+
+                // Delete
+                listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+                    @Override
+                    public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                        list.remove(list);
+
+                        Log.d("TAG", "롱클릭 들어옴 " + list.get(position));
+                        String zzimDelete = "DELETE FROM ZZIM_" + userId + " WHERE title='" + list.get(position) + "';";
+                        db.execSQL(zzimDelete);
+                        adapter.notifyDataSetChanged();
+                        return true;
+                    }
+                });
 
                 dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
                 dialog.setContentView(viewDialog); // 이미지가 들어감
                 dialog.show();
 
+                // Insert
                 btnSave.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        MainActivity.db = MainActivity.dbHelper.getWritableDatabase();
+                        Cursor cursor;
+                        cursor = MainActivity.db.rawQuery("SELECT COUNT(*) FROM STAMP_" + userId + ";", null);
 
+
+                        // 여기서 8개 이상이면 못 받아줌
+                        //  중복 검사 스탬프 테이블에 총 갯수 8개
+                        if (checkedList.size() > 8) {
+                            Toast.makeText(getApplicationContext(), "스탬프 리스트에 8개 이상 담을 수 없습니닷!!!", Toast.LENGTH_LONG).show();
+                        } else {
+//                            String stampInsert = "INSERT INTO STAMP_" + userId + " VALUES('" + list.get(position).getTitle() + "', '"
+//                                    + list.get(position).getMapX() + "', '"
+//                                    + list.get(position).getMapY() + "');";
+//
+//                            db.execSQL(zzimInsert);
+//                            while (cursor.moveToNext()) {
+//                                cursor.getCount() > 8
+//                                if (cursor.getString(0).equals(list.get(position))) {
+//                                    Toast.makeText(getApplicationContext(), list.get(position) + " 이미 스탬프 리스트에 들어 있습니다.", Toast.LENGTH_LONG).show();
+//                                } else {
+//                                    checkedList.add(list.get(position));
+//                                }
+//
+//                            }
+
+
+                        }
                     }
                 });
 
@@ -230,22 +326,21 @@ public class ThemeActivity extends AppCompatActivity implements TabLayout.BaseOn
                         dialog.dismiss();
                     }
                 });
+                cursor.close();
 
-                break;
-
-            case R.id.btnSearch :
+            case R.id.btnSearch:
 
                 String word = edtSearch.getText().toString().trim();
 
                 Intent intent2 = new Intent(ThemeActivity.this, SearchActivity.class);
 
-                if(word.length() > 1){
+                if (word.length() > 1) {
 
-                    intent2.putExtra("word",word);
+                    intent2.putExtra("word", word);
 
                     startActivity(intent2);
 
-                }else{
+                } else {
                     Toast.makeText(getApplicationContext(), "두 글자 이상 입력해 주세요", Toast.LENGTH_LONG).show();
                 }
 
@@ -276,4 +371,8 @@ public class ThemeActivity extends AppCompatActivity implements TabLayout.BaseOn
 
         }
     }
+
+
 }
+
+
