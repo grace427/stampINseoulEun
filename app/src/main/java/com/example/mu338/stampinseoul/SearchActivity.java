@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -29,6 +30,8 @@ import org.json.JSONObject;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+
+import static com.example.mu338.stampinseoul.LoginActivity.userId;
 
 
 public class SearchActivity extends AppCompatActivity {
@@ -161,6 +164,10 @@ public class SearchActivity extends AppCompatActivity {
 
                         @Override
                         public void onResponse(JSONObject response) {
+                            MainActivity.db = MainActivity.dbHelper.getWritableDatabase();
+                            Cursor cursor;
+
+                            cursor = MainActivity.db.rawQuery("SELECT title FROM ZZIM_"+userId+";", null);
 
                             try {
 
@@ -181,6 +188,12 @@ public class SearchActivity extends AppCompatActivity {
                                     themeData.setTitle(imsi.getString("title"));
                                     themeData.setContentsID(Integer.valueOf(imsi.getString("contentid")));
 
+                                    while(cursor.moveToNext()){
+                                        if(cursor.getString(0).equals(themeData.getTitle())){
+                                            themeData.setHart(true);
+                                        }
+                                    }
+                                    cursor.moveToFirst();
                                     list.add(themeData);
 
                                 }

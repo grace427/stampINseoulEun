@@ -4,8 +4,10 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.database.SQLException;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 
 import android.view.View;
@@ -24,9 +26,12 @@ import com.bumptech.glide.Glide;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
 import java.util.ArrayList;
 
 import xyz.hanks.library.bang.SmallBangView;
+
+import static com.example.mu338.stampinseoul.LoginActivity.userId;
 
 
 public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.MyViewHolder> {
@@ -65,7 +70,7 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.MyViewHold
     }
 
     @Override
-    public void onBindViewHolder(@NonNull final SearchAdapter.MyViewHolder myViewHolder, int position) {
+    public void onBindViewHolder(@NonNull final SearchAdapter.MyViewHolder myViewHolder, final int position) {
 
         myViewHolder.txtView.setText(list.get(position).getTitle());
 
@@ -86,117 +91,160 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.MyViewHold
             }
         });
 
+        myViewHolder.Like_heart.setSelected(false);
         myViewHolder.Like_heart.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
+                MainActivity.db = MainActivity.dbHelper.getWritableDatabase();
 
-                if (myViewHolder.Like_heart.isSelected()) {
+                try {
+                    if (list.get(position).isHart()) {
+                        // 하트 선택 해제
+                        myViewHolder.Like_heart.setSelected(false);
+                        list.get(position).setHart(false);
 
-                    myViewHolder.Like_heart.setSelected(false);
+                        String zzimDelete = "DELETE FROM ZZIM_"+userId+" WHERE title='"+list.get(position).getTitle()+"';";
+                        MainActivity.db.execSQL(zzimDelete);
+                    } else {
+                        // 하트 선택
+                        myViewHolder.Like_heart.setSelected(true);
+                        list.get(position).setHart(true);
 
-                } else {
+                        String zzimInsert = "INSERT INTO ZZIM_" + userId + " VALUES('" + list.get(position).getTitle() + "', '"
+                                + list.get(position).getAddr() + "', '"
+                                + list.get(position).getMapX() + "', '"
+                                + list.get(position).getMapY() + "');";
 
-                    myViewHolder.Like_heart.setSelected(true);
+                        MainActivity.db.execSQL(zzimInsert);
 
-                    myViewHolder.Like_heart.likeAnimation(new AnimatorListenerAdapter() {
-
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            super.onAnimationEnd(animation);
-                        }
-
-                    });
+                        Log.d("TAG", "하트를 선택하면 ZZIM 테이블 디비에 들어간다 : " + list.get(position).getAddr());
+                        myViewHolder.Like_heart.likeAnimation(new AnimatorListenerAdapter() {
+                            @Override
+                            public void onAnimationEnd(Animator animation) {
+                                super.onAnimationEnd(animation);
+                            }
+                        });
+                    }
+                }catch(SQLException e){
                 }
 
-            }
+
+            } // onClick
         });
-    }
+        if (list.get(position).isHart()) {
+            myViewHolder.Like_heart.setSelected(true);
+        }
 
 
+//        myViewHolder.Like_heart.setOnClickListener(new View.OnClickListener() {
+//
+//            @Override
+//            public void onClick(View v) {
+//
+//                if (myViewHolder.Like_heart.isSelected()) {
+//
+//                    myViewHolder.Like_heart.setSelected(false);
+//
+//                } else {
+//
+//                    myViewHolder.Like_heart.setSelected(true);
+//
+//                    myViewHolder.Like_heart.likeAnimation(new AnimatorListenerAdapter() {
+//
+//                        @Override
+//                        public void onAnimationEnd(Animator animation) {
+//                            super.onAnimationEnd(animation);
+//                        }
+//
+//                    });
+//                }
+//
+//            }
+//        });
 
+
+        }
     @Override
 
     public int getItemCount() {
-        return list == null ? 0: list.size();
+        return list == null ? 0 : list.size();
     }
 
 
+public class MyViewHolder extends RecyclerView.ViewHolder {
 
-    public class MyViewHolder extends RecyclerView.ViewHolder {
+    public TextView txtView;
+    public ImageView imgView;
 
-        public TextView txtView;
-        public ImageView imgView;
+    public SmallBangView Like_heart;
+    public ImageView imageHeart;
 
-        public SmallBangView Like_heart;
-        public ImageView imageHeart;
+    public MyViewHolder(@NonNull View itemView) {
+        super(itemView);
 
-        public MyViewHolder(@NonNull View itemView) {
-            super(itemView);
+        txtView = itemView.findViewById(R.id.txtView);
+        imgView = itemView.findViewById(R.id.imgView);
 
-            txtView = itemView.findViewById(R.id.txtView);
-            imgView = itemView.findViewById(R.id.imgView);
+        Like_heart = itemView.findViewById(R.id.like_heart);
+        imageHeart = itemView.findViewById(R.id.imageHeart);
+    }
+}
 
-            Like_heart = itemView.findViewById(R.id.like_heart);
-            imageHeart = itemView.findViewById(R.id.imageHeart);
-        }
+
+class AsyncTaskClass extends android.os.AsyncTask<Integer, ThemeData, ThemeData> {
+
+    @Override
+    protected void onPreExecute() {
+        super.onPreExecute();
+    }
+
+    @Override
+
+    protected ThemeData doInBackground(Integer... integers) {
+
+        int position = integers[0];
+
+        ThemeData myThemeData1 = list.get(position);
+        ThemeData themeData = getData(myThemeData1.getContentsID());
+
+        return themeData;
     }
 
 
-    class AsyncTaskClass extends android.os.AsyncTask<Integer, ThemeData, ThemeData> {
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-        @Override
-
-        protected ThemeData doInBackground(Integer... integers) {
-
-            int position = integers[0];
-
-            ThemeData myThemeData1 = list.get(position);
-            ThemeData themeData = getData(myThemeData1.getContentsID());
-
-            return themeData;
-        }
+    @Override
+    protected void onProgressUpdate(ThemeData... values) {
+        super.onProgressUpdate(values);
+    }
 
 
-        @Override
-        protected void onProgressUpdate(ThemeData... values) {
-            super.onProgressUpdate(values);
-        }
+    @Override
+    protected void onPostExecute(ThemeData themeData) {
+        super.onPostExecute(themeData);
 
+        viewDialog = View.inflate(context, R.layout.dialog_info, null);
 
-        @Override
-        protected void onPostExecute(ThemeData themeData) {
-            super.onPostExecute(themeData);
+        TextView txt_Detail_title = viewDialog.findViewById(R.id.txt_Detail_title);
+        TextView txt_Detail_addr = viewDialog.findViewById(R.id.txt_Detail_addr);
+        TextView txt_Detail_info = viewDialog.findViewById(R.id.txt_Detail_info);
+        ImageView img_Datail_info = viewDialog.findViewById(R.id.img_Datail_info);
 
-            viewDialog = View.inflate(context, R.layout.dialog_info, null);
+        Glide.with(context).load(themeData.getFirstImage()).override(500, 300).into(img_Datail_info);
 
-            TextView txt_Detail_title = viewDialog.findViewById(R.id.txt_Detail_title);
-            TextView txt_Detail_addr = viewDialog.findViewById(R.id.txt_Detail_addr);
-            TextView txt_Detail_info = viewDialog.findViewById(R.id.txt_Detail_info);
-            ImageView img_Datail_info = viewDialog.findViewById(R.id.img_Datail_info);
+        txt_Detail_title.setText(themeData.getTitle());
+        txt_Detail_addr.setText(themeData.getAddr());
+        txt_Detail_info.setText(themeData.getOverView());
 
-            Glide.with(context).load(themeData.getFirstImage()).override(500, 300).into(img_Datail_info);
+        AlertDialog.Builder dialog = new AlertDialog.Builder(context);
 
-            txt_Detail_title.setText(themeData.getTitle());
-            txt_Detail_addr.setText(themeData.getAddr());
-            txt_Detail_info.setText(themeData.getOverView());
+        dialog.setTitle(" 정보");
+        dialog.setView(viewDialog); // 이미지가 들어감
+        dialog.setPositiveButton("닫기", null);
+        dialog.show();
 
-            AlertDialog.Builder dialog = new AlertDialog.Builder(context);
+    }
 
-            dialog.setTitle(" 정보");
-            dialog.setView(viewDialog); // 이미지가 들어감
-            dialog.setPositiveButton("닫기", null);
-            dialog.show();
-
-        }
-
-    } // end of AsyncTaskClass
-
+} // end of AsyncTaskClass
 
 
     private ThemeData getData(int contentID) {
