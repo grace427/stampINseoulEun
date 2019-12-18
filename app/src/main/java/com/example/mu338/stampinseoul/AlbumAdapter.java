@@ -1,11 +1,13 @@
 package com.example.mu338.stampinseoul;
 
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,16 +21,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.CustomViewHolder> {
-                                    // 리사이클러뷰 어댑터, 메인 어댑터에서 제공되는 내부클래스를 쓰는것, CustomViewHolder는 내가 직접 만드는것.
-                                    // 3개의 메소드인데, 리스트뷰 메소드 4개가 포함되어있음.
+    // 리사이클러뷰 어댑터, 메인 어댑터에서 제공되는 내부클래스를 쓰는것, CustomViewHolder는 내가 직접 만드는것.
+    // 3개의 메소드인데, 리스트뷰 메소드 4개가 포함되어있음.
 
     // 1. private Context context : onCreateViewHolder에서 ViewGroup으로 제공이 된다.
     private int layout;
-    private ArrayList<CameraData> list;
+    private ArrayList<ThemeData> list;
 
     private LayoutInflater layoutInflater;
 
-    public AlbumAdapter(int layout, ArrayList<CameraData> list) {
+    public AlbumAdapter(int layout, ArrayList<ThemeData> list) {
         this.layout = layout;
         this.list = list;
     }
@@ -53,40 +55,45 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.CustomViewHo
     public void onBindViewHolder(@NonNull final AlbumAdapter.CustomViewHolder customViewHolder, final int position) {
 
         // customViewHolder.txtID.setText(list.get(position).getReviewTxtID());
-        customViewHolder.txtPola.setText(list.get(position).getEdtPola());
-        customViewHolder.txtTitle.setText(list.get(position).getEdtTitle());
-        customViewHolder.txtContent.setText(list.get(position).getEdtContents());
+
+        // list.removeAll(list);
+        customViewHolder.txtPola.setText(list.get(position).getContent_pola());
+        customViewHolder.txtTitle.setText(list.get(position).getContent_title());
+        customViewHolder.txtContent.setText(list.get(position).getContents());
 
         customViewHolder.itemView.setTag(position);
-
-        Bitmap bitmap = BitmapFactory.decodeFile(list.get(position).getImgPhoto());
-
-        ExifInterface exifInterface = null;
-
-        try {
-
-            exifInterface = new ExifInterface(list.get(position).getImgPhoto());
-
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (list.get(position).getPicture() != null) {
+            Bitmap bitmap = BitmapFactory.decodeFile(list.get(position).getPicture());
+            customViewHolder.imgReview.setImageBitmap(bitmap);
+        } else {
+            customViewHolder.imgReview.setImageResource(R.drawable.background_round);
         }
 
-        int exifOrientation;//방향
-        int exifDegres; //각도
+        Log.d("TAG", list.toString());
 
-        if (exifInterface != null) {
+//        ExifInterface exifInterface = null;
+//
+//        try {
+//
+//            exifInterface = new ExifInterface(list.get(position).getPicture());
+//
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//
+//        int exifOrientation;//방향
+//        int exifDegres; //각도
+//
+//        if (exifInterface != null) {
+//
+//            exifOrientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+//            exifDegres = exiforToDe(exifOrientation);
+//
+//        }else{
+//            exifDegres=0;
+//        }
 
-            exifOrientation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
-            exifDegres = exiforToDe(exifOrientation);
-
-        }else{
-            exifDegres=0;
-        }
-
-        Bitmap bitmapTeep = rotate(bitmap,exifDegres);
-
-        customViewHolder.imgReview.setImageBitmap(bitmapTeep);
-
+        //  Bitmap bitmapTeep = rotate(bitmap,exifDegres);
 
 
     }
@@ -154,7 +161,7 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.CustomViewHo
 
         matrix.postRotate(exifDegres);
 
-        Bitmap teepre = Bitmap.createBitmap(bitmap,0,0,bitmap.getWidth(),bitmap.getHeight(),matrix,true);
+        Bitmap teepre = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
 
         return teepre;
 

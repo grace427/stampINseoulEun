@@ -287,12 +287,13 @@ public class ThemeActivity extends AppCompatActivity implements TabLayout.BaseOn
                     @Override
                     public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
 
-
                         Log.d("TAG", "롱클릭 들어옴 " + list.get(position).getTitle());
                         String zzimDelete = "DELETE FROM ZZIM_" + userId + " WHERE title='" + list.get(position).getTitle() + "';";
                         db.execSQL(zzimDelete);
-                        list.remove(list);
+                        //listView.setAdapter(adapter);
+                        adapter.remove(titleList.get(position));
                         adapter.notifyDataSetChanged();
+                        list.remove(list.get(position));
                         return true;
                     }
                 });

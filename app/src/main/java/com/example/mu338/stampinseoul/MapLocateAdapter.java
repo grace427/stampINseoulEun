@@ -15,11 +15,11 @@ import java.util.ArrayList;
 public class MapLocateAdapter extends RecyclerView.Adapter<MapLocateAdapter.CustomViewHolder> {
 
     private int layout;
-    private ArrayList<MapLocateData> list;
+    private ArrayList<ThemeData> list;
 
     static int number = 0;
 
-    public MapLocateAdapter(int layout, ArrayList<MapLocateData> list) {
+    public MapLocateAdapter(int layout, ArrayList<ThemeData> list) {
         this.layout = layout;
         this.list = list;
     }
@@ -40,8 +40,8 @@ public class MapLocateAdapter extends RecyclerView.Adapter<MapLocateAdapter.Cust
     @Override
     public void onBindViewHolder(@NonNull final MapLocateAdapter.CustomViewHolder customViewHolder, final int position) {
 
-        customViewHolder.txtName.setText(list.get(position).getTxtName());
-        customViewHolder.txtContent.setText(list.get(position).getTxtContent());
+        customViewHolder.txtName.setText(list.get(position).getTitle());
+        customViewHolder.txtContent.setText(list.get(position).getAddr());
 
         customViewHolder.itemView.setTag(position);
 
@@ -50,7 +50,7 @@ public class MapLocateAdapter extends RecyclerView.Adapter<MapLocateAdapter.Cust
             @Override
             public void onClick(View v) {
 
-                String str = list.get(position).getTxtName();
+                String str = list.get(position).getTitle();
 
                 Uri uri = Uri.parse("https://www.google.com/search?q="+str+"&oq="+str+"&aqs=chrome");
 
@@ -62,7 +62,14 @@ public class MapLocateAdapter extends RecyclerView.Adapter<MapLocateAdapter.Cust
 
             }
         });
-
+        customViewHolder.imageCamera.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(v.getContext(), CameraActivity.class);
+                intent.putExtra("title", list.get(position).getTitle());
+                v.getContext().startActivity(intent);
+            }
+        });
     }
 
     @Override // 리스트의 사이즈를 준다.
@@ -82,12 +89,12 @@ public class MapLocateAdapter extends RecyclerView.Adapter<MapLocateAdapter.Cust
         public ImageView imaProfile;
         public TextView txtName;
         public TextView txtContent;
-
+        public ImageView imageCamera;
 
         // 아이템뷰에는 뷰 홀더가 객체가 된 레이아웃 주소가 전달이 됨.
         public CustomViewHolder(@NonNull View itemView) {
             super(itemView);
-
+            imageCamera = itemView.findViewById(R.id.imageCamera);
             imaProfile = itemView.findViewById(R.id.fImgProfile);
             txtName = itemView.findViewById(R.id.fTxtName);
             txtContent = itemView.findViewById(R.id.txtContent);

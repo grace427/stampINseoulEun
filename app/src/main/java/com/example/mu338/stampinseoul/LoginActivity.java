@@ -162,6 +162,7 @@ public class LoginActivity extends AppCompatActivity implements View.OnClickList
                                 + result.getId() + "' , '"
                                 + result.getNickname() + "' , '"
                                 + result.getProfileImagePath() + "');";
+
                         //+ " SELECT * FROM userTBL WHERE NOT EXISTS (SELECT userId FROM userTBL WHERE userID='" + result.getId() + "') LIMIT 1;";
                         db.execSQL(insertUserInfo);
 

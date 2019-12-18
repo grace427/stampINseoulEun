@@ -4,6 +4,7 @@ import android.app.FragmentManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.location.Location;
@@ -59,7 +60,7 @@ public class MapLocateActivity extends Fragment implements OnMapReadyCallback, V
     LocationManager locManager;
     PendingIntent proximityIntent;
 
-    static ArrayList<MapLocateData> list = new ArrayList<>();
+    static ArrayList<ThemeData> list = new ArrayList<>();
     ArrayList<MarkerOptions> cctvList = new ArrayList<MarkerOptions>();
     ArrayList<String> check = new ArrayList<>();
     static GoogleMap googleMaps;
@@ -131,13 +132,13 @@ public class MapLocateActivity extends Fragment implements OnMapReadyCallback, V
 
                 if(check.size() == 0){
 
-                    check.add(list.get(position).getTxtName());
+                    check.add(list.get(position).getTitle());
 
                 }else{
 
                     for( int x=0 ; x < check.size() ; x++ ){
 
-                        if(check.get(x).equals(list.get(position).getTxtName())){
+                        if(check.get(x).equals(list.get(position).getTitle())){
                             check.remove(x);
 
                             // Toast.makeText(getContext(), "테스트 else", Toast.LENGTH_SHORT).show();
@@ -147,7 +148,7 @@ public class MapLocateActivity extends Fragment implements OnMapReadyCallback, V
                     }
 
                     if(tag){
-                        check.add(list.get(position).getTxtName());
+                        check.add(list.get(position).getTitle());
                     }
                 }
 
@@ -249,17 +250,17 @@ public class MapLocateActivity extends Fragment implements OnMapReadyCallback, V
 
             for( String x : check ){
 
-                for( MapLocateData y : list ){
+                for( ThemeData y : list ){
 
-                    if(x.equals(y.getTxtName())){
+                    if(x.equals(y.getTitle())){
 
                         //위치값
-                        LatLng latLng = new LatLng(y.getLatitude(), y.getLongitude());
+                        LatLng latLng = new LatLng(y.getMapY(), y.getMapX());
                         //지도에 표시 마킹
 
                         MarkerOptions markerOptions = new MarkerOptions();
-                        markerOptions.title(y.getTxtName());
-                        markerOptions.snippet(y.getTxtContent());
+                        markerOptions.title(y.getTitle());
+                        markerOptions.snippet(y.getAddr());
                         markerOptions.position(latLng);
 
                         googleMaps.addMarker(markerOptions);
@@ -352,13 +353,14 @@ public class MapLocateActivity extends Fragment implements OnMapReadyCallback, V
 
         list.removeAll(list);
 
-        list.add(new MapLocateData("디지털미디어시티", "DMC 위치 정보!", 37.578261, 126.900420));
-        list.add(new MapLocateData("경복궁", "경복궁 위치 정보", 37.579749, 126.977032));
-        list.add(new MapLocateData("덕수궁", "덕수궁 위치 정보", 37.566034, 126.975157));
-        list.add(new MapLocateData("광화문 광장", "광화문 광장 위치 정보", 37.574229, 126.976785));
-        list.add(new MapLocateData("북촌 한옥마을", "북촌 한옥마을 위치 정보", 37.582620, 126.983653));
-        list.add(new MapLocateData("종묘", "종묘 위치 정보", 37.574804, 126.994197));
-        list.add(new MapLocateData("광장 시장", "광장 시장 위치 정보", 37.570399, 126.999330));
+        MainActivity.db = MainActivity.dbHelper.getWritableDatabase();
+        Cursor cursor;
+        cursor = MainActivity.db.rawQuery("SELECT * FROM STAMP_"+LoginActivity.userId+";", null);
+        if(cursor != null){
+            while(cursor.moveToNext()){
+                list.add(new ThemeData(cursor.getString(1), cursor.getString(2), cursor.getDouble(3), cursor.getDouble(4)));
+            }
+        }
 
     }
 

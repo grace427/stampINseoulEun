@@ -9,9 +9,23 @@ public class ThemeData implements Serializable {
     private String addr;
     private String tel;
     private String overView;
+    private String picture;
+    private String content_pola;
+    private String content_title;
+    private String contents;
+    private int complete;
     private double mapX;
     private double mapY;
     private boolean hart=false;
+
+    public ThemeData(String title, String picture, String content_pola, String content_title, String contents, int complete) {
+        this.title = title;
+        this.picture = picture;
+        this.content_pola = content_pola;
+        this.content_title = content_title;
+        this.contents = contents;
+        this.complete = complete;
+    }
 
     public ThemeData(){
 
@@ -22,6 +36,46 @@ public class ThemeData implements Serializable {
         this.addr = addr;
         this.mapX = mapX;
         this.mapY = mapY;
+    }
+
+    public String getPicture() {
+        return picture;
+    }
+
+    public void setPicture(String picture) {
+        this.picture = picture;
+    }
+
+    public String getContent_pola() {
+        return content_pola;
+    }
+
+    public void setContent_pola(String content_pola) {
+        this.content_pola = content_pola;
+    }
+
+    public String getContent_title() {
+        return content_title;
+    }
+
+    public void setContent_title(String content_title) {
+        this.content_title = content_title;
+    }
+
+    public String getContents() {
+        return contents;
+    }
+
+    public void setContents(String contents) {
+        this.contents = contents;
+    }
+
+    public int getComplete() {
+        return complete;
+    }
+
+    public void setComplete(int complete) {
+        this.complete = complete;
     }
 
     public boolean isHart() {

@@ -17,11 +17,11 @@ public class GpsAdapter extends RecyclerView.Adapter<GpsAdapter.CustomViewHolder
 
     // 1. private Context context : onCreateViewHolder에서 ViewGroup으로 제공이 된다.
     private int layout;
-    private ArrayList<GpsData> list;
+    private ArrayList<ThemeData> list;
 
     private LayoutInflater layoutInflater;
 
-    public GpsAdapter(int layout, ArrayList<GpsData> list) {
+    public GpsAdapter(int layout, ArrayList<ThemeData> list) {
         this.layout = layout;
         this.list = list;
     }
@@ -46,21 +46,12 @@ public class GpsAdapter extends RecyclerView.Adapter<GpsAdapter.CustomViewHolder
     public void onBindViewHolder(@NonNull final GpsAdapter.CustomViewHolder customViewHolder, final int position) {
 
         // customViewHolder.imaProfile.setImageResource(list.get(position).getMissionImgProfile()); // 값을 넣는다.
-        customViewHolder.txtName.setText(list.get(position).getMissionTxtName());
-        customViewHolder.txtContent.setText(list.get(position).getMissionTxtContent());
+        customViewHolder.txtName.setText(list.get(position).getTitle());
+        customViewHolder.txtContent.setText(list.get(position).getAddr());
 
         customViewHolder.itemView.setTag(position);
 
-        customViewHolder.itemView.setOnClickListener(new View.OnClickListener() { // 이벤트
-            @Override
-            public void onClick(View v) {
 
-                String currentName = customViewHolder.txtName.getText().toString();
-
-                Toast.makeText(v.getContext(), currentName, Toast.LENGTH_SHORT).show();
-
-            }
-        });
 
     }
 

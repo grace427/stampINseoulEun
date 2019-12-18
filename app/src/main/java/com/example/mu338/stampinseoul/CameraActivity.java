@@ -42,11 +42,12 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
     private EditText edtPola, edtTitle, edtContents;
 
     private String imageFilepath;
+    public static String title;
 
     private Uri phortUri;
     static final int RE = 672;
     public static Bitmap imagesave = null;
-    private ArrayList<CameraData> list = new ArrayList<>();
+    private ArrayList<ThemeData> list = new ArrayList<>();
     private String imageFile;
 
     //private MyDB mydb;
@@ -66,6 +67,7 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
         edtPola = findViewById(R.id.edtPola);
         edtTitle = findViewById(R.id.edtTitle);
         edtContents = findViewById(R.id.edtContents);
+        title=getIntent().getStringExtra("title");
 
 
         // mydb = new MyDB(this);
@@ -145,9 +147,18 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
             AlbumActivity alb = new AlbumActivity();
 
-            Bundle bundle = new Bundle(); // 파라미터는 전달할 데이터 개수
-            bundle.putSerializable("list", list); // key , value
-            alb.setArguments(bundle);
+            MainActivity.db=MainActivity.dbHelper.getWritableDatabase();
+            MainActivity.db.execSQL("UPDATE STAMP_"+LoginActivity.userId+" SET picture='"+imageFilepath
+                    +"', content_pola='"+edtPola.getText().toString() //한줄
+                    +"', content_title='"+edtTitle.getText().toString() //제목
+                    +"', contents='"+edtContents.getText().toString() //내용
+                    +"', complete="+1 //성공여부
+                    +" WHERE title='"+ title+"';");
+
+
+            MainActivity.db.close();
+
+
 
             finish();
 
@@ -201,9 +212,9 @@ public class CameraActivity extends AppCompatActivity implements View.OnClickLis
 
             sqlDB.close();*/
 
-            list.add(new CameraData(imageFilepath, edtPola.getText().toString()
-                    , edtTitle.getText().toString()
-                    , edtTitle.getText().toString()));
+//            list.add(new CameraData(imageFilepath, edtPola.getText().toString()
+//                    , edtTitle.getText().toString()
+//                    , edtTitle.getText().toString()));
 
         }
 

@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -63,8 +64,8 @@ public class GpsActivity extends Fragment implements View.OnClickListener, View.
 
     Button alert, alert_release;
 
-    double lat = 0.0;
-    double lng = 0.0;
+    double lastlat = 0.0;
+    double lastlng = 0.0;
 
     GoogleMap gMap;
     GroundOverlayOptions cctvMark;
@@ -73,7 +74,7 @@ public class GpsActivity extends Fragment implements View.OnClickListener, View.
     private float min = 200.0f;
 
     // == 리사이클러뷰
-    private ArrayList<GpsData> list = new ArrayList<>();
+    private ArrayList<ThemeData> list = new ArrayList<>();
     private RecyclerView recyclerView;
     private LinearLayoutManager linearLayoutManager;
     private GpsAdapter gpsAdapter;
@@ -101,6 +102,14 @@ public class GpsActivity extends Fragment implements View.OnClickListener, View.
 
         view = inflater.inflate(R.layout.activity_gps, container, false);
 
+        MainActivity.db = MainActivity.dbHelper.getWritableDatabase();
+        Cursor cursor;
+        cursor = MainActivity.db.rawQuery("SELECT * FROM STAMP_"+LoginActivity.userId+";", null);
+        if(cursor != null){
+            while(cursor.moveToNext()){
+                list.add(new ThemeData(cursor.getString(1), cursor.getString(2), cursor.getDouble(3), cursor.getDouble(4)));
+            }
+        }
         // == 로딩 애니메이션
 
         gpsAnimationDialog = new GpsAnimationDialog(view.getContext());
@@ -128,6 +137,21 @@ public class GpsActivity extends Fragment implements View.OnClickListener, View.
         gpsAdapter = new GpsAdapter(R.layout.gps_item, list);
 
         recyclerView.setAdapter(gpsAdapter);
+
+        recyclerView.addOnItemTouchListener(new RecyclerTouchListener(getContext(), recyclerView, new ClickListener() {
+
+            @Override
+            public void onClick(View view, int position) {
+                lastlng=list.get(position).getMapX();
+                lastlat=list.get(position).getMapY();
+                Log.d("TAG", "위도 경도ㅓ: "+lastlat+"  "+lastlng+" 타이틀  : "+list.get(position).getTitle());
+            }
+
+            @Override
+            public void onLongClick(View view, int position) {
+
+            }
+        }));
 
         // == GPS
 
@@ -239,19 +263,23 @@ public class GpsActivity extends Fragment implements View.OnClickListener, View.
 
                 try {
 
-                    win = true;
+                    if(lastlat !=0.0 && lastlng !=0.0) {
+                        win = true;
 
-                    locManager.addProximityAlert(37.562409, 127.035103, min, -1, proximityIntent);
+                        locManager.addProximityAlert(lastlat, lastlng, min, -1, proximityIntent);
 
-                    Toast.makeText(getActivity(), "GPS기능을 시작합니다.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getActivity(), "GPS기능을 시작합니다.", Toast.LENGTH_SHORT).show();
 
-                    animationView = view.findViewById(R.id.animation_view);
+                        animationView = view.findViewById(R.id.animation_view);
 
-                    if(animationView.isAnimating()){
-                        animationView.cancelAnimation();
+                        if (animationView.isAnimating()) {
+                            animationView.cancelAnimation();
+                        }
+
+                        locationText.setText("GPS기능을 시작합니다.");
+                    }else{
+                        Toast.makeText(view.getContext(), "목적지를 선택하지 않았습니다.", Toast.LENGTH_SHORT).show();
                     }
-
-                    locationText.setText("GPS기능을 시작합니다.");
 
                 } catch (SecurityException e) {
 
@@ -341,14 +369,10 @@ public class GpsActivity extends Fragment implements View.OnClickListener, View.
 
         public void onLocationChanged(Location location) {
 
-            lat = location.getLongitude();
-
-            lng = location.getLatitude();
-
             if (win) {
 
                 try {
-                    locManager.addProximityAlert(37.562409, 127.035103, min, -1, proximityIntent);
+                    locManager.addProximityAlert(lastlat, lastlng, min, -1, proximityIntent);
                 } catch (SecurityException e) {
                     e.printStackTrace();
                 }
